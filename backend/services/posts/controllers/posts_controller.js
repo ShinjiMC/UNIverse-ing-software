@@ -4,14 +4,24 @@ import mongoose from 'mongoose';
 
 const {randomBytes}=require("crypto");
 
-export const createPost = async (req, res) => {
+const handleErrors = async (promise) => {
   try {
-    const postId = randomBytes(8).toString("hex");
-    const newPost = new PostModel({...req.body,postId});
-    await newPost.save();
-    res.status(200).json(newPost);
+    const result = await promise;
+    return { success: true, data: result };
   } catch (error) {
-    res.status(500).json(error);
+    return { success: false, error };
+  }
+};
+
+export const createPost = async (req, res) => {
+  const postId = randomBytes(8).toString("hex");
+  const newPost = new PostModel({ ...req.body, postId });
+  const result = await handleErrors(newPost.save());
+  
+  if (result.success) {
+    res.status(200).json(result.data);
+  } else {
+    res.status(500).json(result.error);
   }
 };
 
@@ -26,7 +36,6 @@ export const getPost = async (req, res) => {
     res.status(500).json(error);
   }
 };
-
 
 export const updatePost = async (req, res) => {
   const postId = req.params.id;
@@ -50,7 +59,7 @@ export const updatePost = async (req, res) => {
 
 
 export const deletePost = async (req, res) => {
-  const id = req.params.id;
+  const id = req.params.id; 
   const { userId } = req.body;
 
   try {
@@ -86,45 +95,46 @@ export const likePost = async (req, res) => {
 };
 
 export const getTimelinePosts = async (req, res) => {
-    const userId = req.params.id;
-    try {
-      const currentUserPostsQuery = PostModel.find({ userId: userId }).exec();
-  
-      const followingPosts = await UserModel.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(userId),
-          },
+  const userId = req.params.id;
+  try {
+    const currentUserPostsQuery = PostModel.find({ userId: userId }).exec();
+    const currentUserPosts = await currentUserPostsQuery;
+
+    const followingPosts = await UserModel.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(userId),
         },
-        {
-          $lookup: {
-            from: "posts",
-            localField: "following",
-            foreignField: "userId",
-            as: "followingPosts",
-          },
+      },
+      {
+        $lookup: {
+          from: "posts",
+          localField: "following",
+          foreignField: "userId",
+          as: "followingPosts",
         },
-        {
-          $project: {
-            followingPosts: 1,
-            _id: 0,
-          },
+      },
+      {
+        $project: {
+          followingPosts: 1,
+          _id: 0,
         },
-      ]).exec();
-  
-      const currentUserPosts = await currentUserPostsQuery;
-  
-      res.status(200).json(
-        currentUserPosts
-          .concat(...followingPosts[0].followingPosts)
-          .sort((a, b) => {
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          })
-      );
-    } catch (error) {
-      res.status(500).json(error);
-    }
-  };
+      },
+    ]).exec();
+
+    const timelinePosts = currentUserPosts.concat(
+      ...followingPosts[0].followingPosts
+    );
+
+    timelinePosts.sort((a, b) => {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    res.status(200).json(timelinePosts);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
   
 
 module.exports = {

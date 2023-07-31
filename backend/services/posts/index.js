@@ -1,23 +1,7 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import app from './app.js'
+import { connectDB } from "./db.js";
+import { PORT } from "./config.js";
 
-const uri = "mongodb+srv://Shyni:qwert123@shyni.x3spvzs.mongodb.net/?retryWrites=true&w=majority";
-
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
-async function run() {
-  try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    await client.close();
-  }
-}
-
-run().catch(console.dir);
+connectDB();
+app.listen(PORT);
+console.log(`Server on port ${PORT}`);
