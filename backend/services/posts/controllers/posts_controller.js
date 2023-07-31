@@ -142,4 +142,6 @@ module.exports = {
     getPost,
     updatePost,
     deletePost,
+    likePost,
+    getTimelinePosts,
 };
