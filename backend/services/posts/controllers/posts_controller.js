@@ -1,5 +1,6 @@
 import PostModel from "../models/postModel.js";
 import UserModel from "../models/userModel.js";
+import * as postActions from "./postActions";
 import mongoose from 'mongoose';
 
 const {randomBytes}=require("crypto");
@@ -14,10 +15,7 @@ const handleErrors = async (promise) => {
 };
 
 export const createPost = async (req, res) => {
-  const postId = randomBytes(8).toString("hex");
-  const newPost = new PostModel({ ...req.body, postId });
-  const result = await handleErrors(newPost.save());
-  
+  const result = await postActions.createPostAction(req.body);
   if (result.success) {
     res.status(200).json(result.data);
   } else {
@@ -26,112 +24,62 @@ export const createPost = async (req, res) => {
 };
 
 export const getPost = async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    const postQuery = PostModel.findById(id).exec();
-    const post = await postQuery;
-    res.status(200).json(post);
-  } catch (error) {
-    res.status(500).json(error);
+  const postId = req.params.id;
+  const result = await postActions.getPostAction(postId);
+  if (result.success) {
+    res.status(200).json(result.data);
+  } else {
+    res.status(500).json(result.error);
   }
 };
 
 export const updatePost = async (req, res) => {
   const postId = req.params.id;
-  const { userId } = req.body;
-
-  try {
-    const postQuery = PostModel.findById(postId).exec();
-    const post = await postQuery;
-    
-    if (post.userId === userId) {
-      await post.updateOne({ $set: req.body });
-      res.status(200).json("Post updated!");
-    } else {
-      res.status(403).json("Authentication failed");
-    }
-  } catch (error) {
-    res.status(500).json(error);
+  const userId = req.body.userId;
+  const newData = req.body;
+  
+  const result = await postActions.updatePostAction(postId, newData, userId);
+  
+  if (result.success) {
+    res.status(200).json(result.message);
+  } else {
+    res.status(403).json(result.message);
   }
 };
 
-
-
 export const deletePost = async (req, res) => {
-  const id = req.params.id; 
-  const { userId } = req.body;
-
-  try {
-    const postQuery = PostModel.findById(id).exec();
-    const post = await postQuery;
-    if (post.userId === userId) {
-      await post.deleteOne();
-      res.status(200).json("Post deleted.");
-    } else {
-      res.status(403).json("Action forbidden");
-    }
-  } catch (error) {
-    res.status(500).json(error);
+  const postId = req.params.id;
+  const userId = req.body.userId;
+  
+  const result = await postActions.deletePostAction(postId, userId);
+  
+  if (result.success) {
+    res.status(200).json(result.message);
+  } else {
+    res.status(403).json(result.message);
   }
 };
 
 export const likePost = async (req, res) => {
-  const id = req.params.id;
-  const { userId } = req.body;
-  try {
-    const postQuery = PostModel.findById(id).exec();
-    const post = await postQuery;
-    if (post.likes.includes(userId)) {
-      await post.updateOne({ $pull: { likes: userId } });
-      res.status(200).json("Post disliked");
-    } else {
-      await post.updateOne({ $push: { likes: userId } });
-      res.status(200).json("Post liked");
-    }
-  } catch (error) {
-    res.status(500).json(error);
+  const postId = req.params.id;
+  const userId = req.body.userId;
+  
+  const result = await postActions.likePostAction(postId, userId);
+  
+  if (result.success) {
+    res.status(200).json(result.message);
+  } else {
+    res.status(500).json(result.error);
   }
 };
 
 export const getTimelinePosts = async (req, res) => {
   const userId = req.params.id;
-  try {
-    const currentUserPostsQuery = PostModel.find({ userId: userId }).exec();
-    const currentUserPosts = await currentUserPostsQuery;
-
-    const followingPosts = await UserModel.aggregate([
-      {
-        $match: {
-          _id: new mongoose.Types.ObjectId(userId),
-        },
-      },
-      {
-        $lookup: {
-          from: "posts",
-          localField: "following",
-          foreignField: "userId",
-          as: "followingPosts",
-        },
-      },
-      {
-        $project: {
-          followingPosts: 1,
-          _id: 0,
-        },
-      },
-    ]).exec();
-
-    const timelinePosts = currentUserPosts.concat(
-      ...followingPosts[0].followingPosts
-    );
-
-    timelinePosts.sort((a, b) => {
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-    res.status(200).json(timelinePosts);
-  } catch (error) {
-    res.status(500).json(error);
+  const result = await postActions.getTimelinePostsAction(userId);
+  if (result.success) {
+    res.status(200).json(result.data);
+  } else {
+    res.status(500).json(result.error);
   }
 };
 
