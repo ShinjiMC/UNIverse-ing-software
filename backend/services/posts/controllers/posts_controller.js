@@ -1,6 +1,6 @@
 import PostModel from "../models/postModel.js";
 import UserModel from "../models/userModel.js";
-import * as postActions from "./postActions";
+import * as postActions from "./post_actions";
 import mongoose from 'mongoose';
 
 const {randomBytes}=require("crypto");
