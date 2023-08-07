@@ -161,3 +161,12 @@ En general, si bien el estilo Monolithic puede ser adecuado para aplicaciones m�
 5. **Uso adecuado de promesas y `async/await`**: El código utiliza correctamente promesas y `async/await` para manejar operaciones asincrónicas. Esto mejora la legibilidad y evita el anidamiento excesivo de callbacks.
 
 En general, el código muestra buenas prácticas de codificación legible, como el uso de nombres descriptivos, el manejo adecuado de errores y la consistencia en el formato y estilo del código. Estas prácticas contribuyen a un código más claro y fácil de mantener.
+
+
+## Aplicación de Principios SOLID
+
+1. S - Single Responsibility:
+Cada función parece tener una responsabilidad clara y única. Por ejemplo, `createPost` solo maneja la creación de una nueva publicación, `getPost` maneja la obtención de una publicación por su ID, `updatePost` actualiza una publicación, `deletePost` elimina una publicación, `likePost` maneja el gusto/no me gusta de una publicación y `getTimelinePosts` obtiene publicaciones para la línea de tiempo de un usuario.
+
+2. O — Open-Closed:
+El principio establece que las entidades de software (clases, módulos, funciones) deben estar abiertas para la extensión pero cerradas para la modificación. Esto se puede lograr mediante el uso de abstracción y polimorfismo para permitir que se agreguen nuevas funciones sin modificar el código existente. Se creo una separación entre las acciones principales de publicación y su ejecución en `postActions.js`, lo que facilita agregar nuevas acciones sin modificar el código existente en `posts_controller.js`.
